@@ -1,35 +1,68 @@
+import { Sand } from "./particle.js";
+
 class Engine {
   constructor(ctx) {
     this.ctx = ctx;
-    this.width = ctx.canvas.width;
     this.height = ctx.canvas.height;
-    this.matrix = [...new Array(this.height)].map(() =>
-      new Array(this.width).fill(0)
-    );
+    this.width = ctx.canvas.width;
+    this.state = createMatrix(this.height, this.width);
+    this.nextState = createMatrix(this.height, this.width);
+    this.update();
+    this.brushSize = 15;
   }
 
   draw(x, y) {
-    this.matrix[y][x] = 1;
-    this.#paintPixel(x, y);
+    for (let j = y + this.brushSize; j > y - this.brushSize; j--) {
+      for (let i = x - this.brushSize; i < x + this.brushSize; i++) {
+        const particle = new Sand({ x: i, y: j });
+        this.state[j][i] = particle;
+        this.#paint(particle);
+      }
+    }
   }
 
-  paint() {
-    this.matrix.forEach((row, r) => {
-      row.forEach((col, c) => {
-        if (this.matrix[r][c]) {
-          this.#paintPixel(c, r);
+  clear() {
+    this.ctx.fillStyle = "rgb(0 0 0 / 30%)";
+    this.ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  update() {
+    for (let row = this.height - 1; row >= 0; row--) {
+      for (let col = 0; col < this.width; col++) {
+        this.nextState[row][col] = null;
+
+        if (this.state[row][col]) {
+          const particle = this.state[row][col];
+          const { x, y } = particle.update(this.nextState);
+          this.nextState[y][x] = particle;
         }
-      });
-    });
+      }
+    }
+
+    this.state = [...this.nextState].map((arr) => [...arr]);
+
+    // repaint
+
+    this.clear();
+
+    for (let row = this.height - 1; row >= 0; row--) {
+      for (let col = 0; col < this.width; col++) {
+        if (this.state[row][col]) {
+          this.#paint(this.state[row][col]);
+        }
+      }
+    }
+
+    window.requestAnimationFrame(() => this.update());
   }
 
-  #paintPixel(x, y) {
+  #paint(particle) {
     this.ctx.lineWidth = 2;
     this.ctx.beginPath();
     this.ctx.lineCap = "round";
-    this.ctx.strokeStyle = "yellow";
-    this.ctx.moveTo(x, y);
-    this.ctx.lineTo(x, y);
+    this.ctx.strokeStyle = particle.color;
+    this.ctx.moveTo(particle.position.x, particle.position.y);
+    this.ctx.lineTo(particle.position.x, particle.position.y);
     this.ctx.stroke();
   }
 }
@@ -58,3 +91,7 @@ window.addEventListener("DOMContentLoaded", () => {
     canvas.removeEventListener("mousemove", draw);
   });
 });
+
+function createMatrix(height, width) {
+  return [...new Array(height)].map(() => new Array(width).fill(null));
+}
