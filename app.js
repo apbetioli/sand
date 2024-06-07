@@ -1,5 +1,7 @@
 import { Sand } from "./particle.js";
 
+const output = document.getElementById("output");
+
 class Engine {
   particles = [];
   brushSize = 20;
@@ -10,7 +12,11 @@ class Engine {
     this.width = ctx.canvas.width;
     this.state = createMatrix(this.height, this.width);
 
-    this.update();
+    // FPS calc
+    this.previous = +Date.now();
+    this.then = +Date.now();
+
+    window.requestAnimationFrame(this.update.bind(this));
   }
 
   spawn(x, y) {
@@ -31,52 +37,73 @@ class Engine {
   clear() {
     // Every paint will make the previous paint fainter for a nice trail effect
     this.ctx.fillStyle = "rgb(0 0 0 / 30%)";
-    this.ctx.fillRect(0, 0, canvas.width, canvas.height);
+    this.ctx.fillRect(0, 0, this.width, this.height);
   }
 
-  update() {
-    this.clear();
+  update(timestamp) {
+    // Logs FPS
+    const delta = timestamp - this.previous;
+    this.previous = timestamp;
+    output.textContent = `${(1000 / delta).toFixed(0)} fps`;
 
-    this.particles.forEach((particle) => {
-      //clear previous particle position
-      this.state[particle.position.y][particle.position.x] = null;
-
-      //calculate next position
-      particle.update(this.state);
-
-      this.#paint(particle);
-    });
+    // Aim for a fixed FPS
+    var now = +Date.now();
+    var delta2 = now - this.then;
+    if (delta2 > 1000 / 30 /* fps */) {
+      this.then = now;
+      this.drawFrame();
+    }
 
     window.requestAnimationFrame(this.update.bind(this));
   }
 
-  #paint(particle) {
-    const { x, y } = particle.position;
-    this.state[y][x] = particle;
+  drawFrame() {
+    this.clear();
 
-    this.ctx.lineWidth = 2;
-    this.ctx.beginPath();
-    this.ctx.lineCap = "round";
-    this.ctx.strokeStyle = particle.color;
-    this.ctx.moveTo(x, y);
-    this.ctx.lineTo(x, y);
-    this.ctx.stroke();
+    const imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+
+    this.particles.forEach((particle) => {
+      // Clear old position
+      this.state[particle.position.y][particle.position.x] = null;
+
+      // Update new position
+      particle.update(this.state);
+      this.state[particle.position.y][particle.position.x] = particle;
+
+      // Paint new position
+      this.paintParticle(imageData.data, particle.position, particle.color);
+    });
+
+    // Updating image data at once is more perfomant
+    this.ctx.putImageData(imageData, 0, 0);
+  }
+
+  paintParticle(data, position, color) {
+    const index = 4 * (position.x + position.y * this.width);
+
+    const [R, G, B] = color;
+    data[index + 0] = R;
+    data[index + 1] = G;
+    data[index + 2] = B;
+    data[index + 3] = 255;
   }
 }
 
 window.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
-  ctx.canvas.width = window.innerWidth * 0.8;
-  ctx.canvas.height = window.innerHeight * 0.8;
+  // ctx.canvas.width = window.innerWidth * 0.8;
+  // ctx.canvas.height = window.innerHeight * 0.8;
   const rect = canvas.getBoundingClientRect();
 
+  const numElement = document.querySelector("#num");
   const engine = new Engine(ctx);
 
   function draw(e) {
     const x = Math.round(e.pageX - rect.left);
     const y = Math.round(e.pageY - rect.top);
     engine.spawn(x, y);
+    numElement.textContent = engine.particles.length;
   }
 
   canvas.addEventListener("mousedown", draw);
