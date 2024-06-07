@@ -20,7 +20,7 @@ class Particle {
 
 export class Sand extends Particle {
   constructor(position) {
-    super(position, ["yellow", "khaki", "DarkKhaki"]);
+    super(position, ["Yellow", "Khaki", "DarkKhaki"]);
   }
 
   updateFn(state) {

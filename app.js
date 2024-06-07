@@ -1,68 +1,65 @@
 import { Sand } from "./particle.js";
 
 class Engine {
+  particles = [];
+  brushSize = 20;
+
   constructor(ctx) {
     this.ctx = ctx;
     this.height = ctx.canvas.height;
     this.width = ctx.canvas.width;
     this.state = createMatrix(this.height, this.width);
-    this.nextState = createMatrix(this.height, this.width);
+
     this.update();
-    this.brushSize = 15;
   }
 
-  draw(x, y) {
+  spawn(x, y) {
     for (let j = y + this.brushSize; j > y - this.brushSize; j--) {
       for (let i = x - this.brushSize; i < x + this.brushSize; i++) {
-        const particle = new Sand({ x: i, y: j });
-        this.state[j][i] = particle;
-        this.#paint(particle);
+        // Out of bounds
+        if (i < 0 || i >= this.width || j < 0 || j >= this.height) continue;
+
+        // Give it a less blocky shape
+        if (Math.random() > 0.9) {
+          const particle = new Sand({ x: i, y: j });
+          this.particles.push(particle);
+        }
       }
     }
   }
 
   clear() {
+    // Every paint will make the previous paint fainter for a nice trail effect
     this.ctx.fillStyle = "rgb(0 0 0 / 30%)";
     this.ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
   update() {
-    for (let row = this.height - 1; row >= 0; row--) {
-      for (let col = 0; col < this.width; col++) {
-        this.nextState[row][col] = null;
-
-        if (this.state[row][col]) {
-          const particle = this.state[row][col];
-          const { x, y } = particle.update(this.nextState);
-          this.nextState[y][x] = particle;
-        }
-      }
-    }
-
-    this.state = [...this.nextState].map((arr) => [...arr]);
-
-    // repaint
-
     this.clear();
 
-    for (let row = this.height - 1; row >= 0; row--) {
-      for (let col = 0; col < this.width; col++) {
-        if (this.state[row][col]) {
-          this.#paint(this.state[row][col]);
-        }
-      }
-    }
+    this.particles.forEach((particle) => {
+      //clear previous particle position
+      this.state[particle.position.y][particle.position.x] = null;
 
-    window.requestAnimationFrame(() => this.update());
+      //calculate next position
+      particle.update(this.state);
+
+      this.#paint(particle);
+    });
+
+    window.requestAnimationFrame(this.update.bind(this));
   }
 
   #paint(particle) {
+    const { x, y } = particle.position;
+    this.state[y][x] = particle;
+
     this.ctx.lineWidth = 2;
     this.ctx.beginPath();
     this.ctx.lineCap = "round";
     this.ctx.strokeStyle = particle.color;
-    this.ctx.moveTo(particle.position.x, particle.position.y);
-    this.ctx.lineTo(particle.position.x, particle.position.y);
+    this.ctx.moveTo(x, y);
+    this.ctx.lineTo(x, y);
     this.ctx.stroke();
   }
 }
@@ -79,7 +76,7 @@ window.addEventListener("DOMContentLoaded", () => {
   function draw(e) {
     const x = Math.round(e.pageX - rect.left);
     const y = Math.round(e.pageY - rect.top);
-    engine.draw(x, y);
+    engine.spawn(x, y);
   }
 
   canvas.addEventListener("mousedown", draw);
