@@ -1,10 +1,11 @@
-import { Sand } from "./particle.js";
+import { Rock, Sand, Water } from "./particle.js";
 
 const output = document.getElementById("output");
 
 class Engine {
   particles = [];
   brushSize = 20;
+  particleClass = Sand;
 
   constructor(ctx) {
     this.ctx = ctx;
@@ -19,6 +20,24 @@ class Engine {
     window.requestAnimationFrame(this.update.bind(this));
   }
 
+  changeParticle(key) {
+    switch (key) {
+      case "W":
+      case "w":
+        this.particleClass = Water;
+        break;
+      case "R":
+      case "r":
+        this.particleClass = Rock;
+        break;
+      case "S":
+      case "s":
+      default:
+        this.particleClass = Sand;
+        break;
+    }
+  }
+
   spawn(x, y) {
     for (let j = y + this.brushSize; j > y - this.brushSize; j--) {
       for (let i = x - this.brushSize; i < x + this.brushSize; i++) {
@@ -27,7 +46,7 @@ class Engine {
 
         // Give it a less blocky shape
         if (Math.random() > 0.9) {
-          const particle = new Sand({ x: i, y: j });
+          const particle = new this.particleClass({ x: i, y: j });
           this.particles.push(particle);
         }
       }
@@ -71,17 +90,17 @@ class Engine {
       this.state[particle.position.y][particle.position.x] = particle;
 
       // Paint new position
-      this.paintParticle(imageData.data, particle.position, particle.color);
+      this.paintParticle(imageData.data, particle);
     });
 
     // Updating image data at once is more perfomant
     this.ctx.putImageData(imageData, 0, 0);
   }
 
-  paintParticle(data, position, color) {
-    const index = 4 * (position.x + position.y * this.width);
+  paintParticle(data, particle) {
+    const index = 4 * (particle.position.x + particle.position.y * this.width);
 
-    const [R, G, B] = color;
+    const [R, G, B] = particle.color;
     data[index + 0] = R;
     data[index + 1] = G;
     data[index + 2] = B;
@@ -113,6 +132,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
   canvas.addEventListener("mouseup", () => {
     canvas.removeEventListener("mousemove", draw);
+  });
+
+  window.addEventListener("keydown", (event) => {
+    engine.changeParticle(event.key);
   });
 });
 

@@ -10,7 +10,6 @@ class Particle {
     for (let counter = 0; counter < this.speed; counter++) {
       this.updateFn(state);
     }
-    return this.position; //for convenience
   }
 
   updateFn(state) {
@@ -30,16 +29,48 @@ export class Sand extends Particle {
   updateFn(state) {
     let { x, y } = this.position;
 
-    if (y + 1 < state.length) {
-      if (!state[y + 1][x]) {
-        y++;
-      } else if (!state[y + 1][x - 1]) {
-        y++;
-        x--;
-      } else if (!state[y + 1][x + 1]) {
-        y++;
-        x++;
-      }
+    const positions = [
+      [x, y + 1],
+      [x - 1, y + 1],
+      [x + 1, y + 1],
+    ];
+
+    const found = positions.find((p) => isEmpty(state, p[0], p[1]));
+    if (found) {
+      [x, y] = found;
+    }
+
+    this.position = { x, y };
+  }
+}
+
+export class Water extends Particle {
+  constructor(position) {
+    super(
+      position,
+      [
+        [30, 144, 255], //#1E90FF
+        [135, 206, 250], //#87CEFA
+        [0, 0, 255], //#0000FF
+      ],
+      50
+    );
+  }
+
+  updateFn(state) {
+    let { x, y } = this.position;
+
+    const positions = [
+      [x, y + 1],
+      [x - 1, y + 1],
+      [x + 1, y + 1],
+      [x - 1, y],
+      [x + 1, y],
+    ];
+
+    const found = positions.find((p) => isEmpty(state, p[0], p[1]));
+    if (found) {
+      [x, y] = found;
     }
 
     this.position = { x, y };
@@ -57,10 +88,18 @@ export class Rock extends Particle {
   updateFn(state) {
     let { x, y } = this.position;
 
-    if (y + 1 < state.length && !state[y + 1][x]) {
+    if (isEmpty(state, x, y + 1)) {
       y++;
     }
 
     this.position = { x, y };
   }
+}
+
+function isWithinBounds(state, x, y) {
+  return y >= 0 && y < state.length && x >= 0 && x < state[0].length;
+}
+
+function isEmpty(state, x, y) {
+  return isWithinBounds(state, x, y) && !state[y][x];
 }
