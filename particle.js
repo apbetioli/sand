@@ -1,5 +1,5 @@
 class Particle {
-  constructor(position, colors = [[255, 255, 255]], speed = 5) {
+  constructor(position, colors = [[255, 255, 255]], speed = 10) {
     const colorIndex = Math.round(Math.random() * (colors.length - 1));
     this.color = colors[colorIndex];
     this.position = position;
@@ -7,13 +7,7 @@ class Particle {
   }
 
   update(state) {
-    for (let counter = 0; counter < this.speed; counter++) {
-      this.updateFn(state);
-    }
-  }
-
-  updateFn(state) {
-    //noop
+    throw new Error("updateFn not implemented");
   }
 }
 
@@ -26,7 +20,7 @@ export class Sand extends Particle {
     ]);
   }
 
-  updateFn(state) {
+  update(state) {
     let { x, y } = this.position;
 
     const positions = [
@@ -53,19 +47,18 @@ export class Water extends Particle {
         [135, 206, 250], //#87CEFA
         [0, 0, 255], //#0000FF
       ],
-      50
+      20
     );
+    this.direction = Math.random() > 0.5 ? -1 : 1;
   }
 
-  updateFn(state) {
+  update(state) {
     let { x, y } = this.position;
 
     const positions = [
       [x, y + 1],
-      [x - 1, y + 1],
-      [x + 1, y + 1],
-      [x - 1, y],
-      [x + 1, y],
+      [x + this.direction, y],
+      [x - this.direction, y],
     ];
 
     const found = positions.find((p) => isEmpty(state, p[0], p[1]));
@@ -85,7 +78,7 @@ export class Rock extends Particle {
     ]);
   }
 
-  updateFn(state) {
+  update(state) {
     let { x, y } = this.position;
 
     if (isEmpty(state, x, y + 1)) {
