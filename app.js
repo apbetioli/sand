@@ -60,20 +60,30 @@ class Engine {
   }
 
   update(timestamp) {
-    // Logs FPS
+    this.logFPS(timestamp);
+
+    this.updatePositions()
+    this.drawFrame();
+
+    window.requestAnimationFrame(this.update.bind(this));
+  }
+
+  updatePositions() {
+    for (let i = 0; i < 5; i++) {
+      this.particles.forEach((particle) => {
+        // Clear old position
+        this.state[particle.position.y][particle.position.x] = null;
+        // Update new position
+        particle.update(this.state);
+        this.state[particle.position.y][particle.position.x] = particle;
+      });
+    }
+  }
+
+  logFPS(timestamp) {
     const delta = timestamp - this.previous;
     this.previous = timestamp;
     output.textContent = `${(1000 / delta).toFixed(0)} fps`;
-
-    // Aim for a fixed FPS
-    var now = +Date.now();
-    var delta2 = now - this.then;
-    if (delta2 > 1000 / 30 /* fps */) {
-      this.then = now;
-      this.drawFrame();
-    }
-
-    window.requestAnimationFrame(this.update.bind(this));
   }
 
   drawFrame() {
@@ -82,14 +92,6 @@ class Engine {
     const imageData = this.ctx.getImageData(0, 0, this.width, this.height);
 
     this.particles.forEach((particle) => {
-      // Clear old position
-      this.state[particle.position.y][particle.position.x] = null;
-
-      // Update new position
-      particle.update(this.state);
-      this.state[particle.position.y][particle.position.x] = particle;
-
-      // Paint new position
       this.paintParticle(imageData.data, particle);
     });
 
