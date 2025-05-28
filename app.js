@@ -20,7 +20,7 @@ class Engine {
     window.requestAnimationFrame(this.update.bind(this));
   }
 
-  changeParticle(key) {
+  chooseParticleType(key) {
     switch (key) {
       case "W":
       case "w":
@@ -53,7 +53,7 @@ class Engine {
     }
   }
 
-  clear() {
+  fadeScreen() {
     // Every paint will make the previous paint fainter for a nice trail effect
     this.ctx.fillStyle = "rgb(0 0 0 / 30%)";
     this.ctx.fillRect(0, 0, this.width, this.height);
@@ -62,13 +62,13 @@ class Engine {
   update(timestamp) {
     this.logFPS(timestamp);
 
-    this.updatePositions()
+    this.updateParticles()
     this.drawFrame();
 
     window.requestAnimationFrame(this.update.bind(this));
   }
 
-  updatePositions() {
+  updateParticles() {
     for (let i = 0; i < 5; i++) {
       this.particles.forEach((particle) => {
         // Clear old position
@@ -87,7 +87,7 @@ class Engine {
   }
 
   drawFrame() {
-    this.clear();
+    this.fadeScreen();
 
     const imageData = this.ctx.getImageData(0, 0, this.width, this.height);
 
@@ -137,7 +137,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   window.addEventListener("keydown", (event) => {
-    engine.changeParticle(event.key);
+    engine.chooseParticleType(event.key);
   });
 });
 
