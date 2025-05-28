@@ -2,12 +2,14 @@ class Particle {
   constructor(
     position,
     colors = [[255, 255, 255]],
-    density = 10
+    density = 10,
+    speed = 1
   ) {
     const colorIndex = Math.round(Math.random() * (colors.length - 1));
     this.color = colors[colorIndex];
     this.position = position;
     this.density = density;
+    this.speed = speed
   }
 
   update(state) {
@@ -26,6 +28,8 @@ class Particle {
 
       if (foundLessDensity) {
         swap(this, foundLessDensity)
+
+        //TODO don't update state here
         state[foundLessDensity.position.y][foundLessDensity.position.x] = foundLessDensity
       }
     }
@@ -34,7 +38,7 @@ class Particle {
   getPositions() {
     const { x, y } = this.position;
     return [
-      [x, y + 1]
+      [x, y + this.speed]
     ]
   }
 }
@@ -48,15 +52,17 @@ export class Sand extends Particle {
         [240, 230, 140], //#F0E68C
         [189, 183, 107], // #BDB76B
       ],
+      10,
+      2
     );
   }
 
   getPositions() {
     const { x, y } = this.position;
     return [
-      [x, y + 1],
-      [x - 1, y + 1],
-      [x + 1, y + 1],
+      [x, y + this.speed],
+      [x - this.speed, y + this.speed],
+      [x + this.speed, y + this.speed],
     ];
   }
 }
@@ -70,15 +76,16 @@ export class Water extends Particle {
         [135, 206, 250], //#87CEFA
         [0, 0, 255], //#0000FF
       ],
+      5,
       5
     );
-    this.direction = Math.random() > 0.5 ? -1 : 1;
+    this.direction = Math.random() > 0.5 ? -this.speed : this.speed;
   }
 
   getPositions() {
     const { x, y } = this.position;
     return [
-      [x, y + 1],
+      [x, y + this.speed],
       [x + this.direction, y],
       [x - this.direction, y],
     ];
@@ -92,7 +99,9 @@ export class Rock extends Particle {
       [
         [128, 128, 128], //#808080
         [211, 211, 211], //#D3D3D3
-      ]
+      ],
+      10,
+      3
     );
   }
 }
