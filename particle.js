@@ -1,13 +1,28 @@
 class Particle {
-  constructor(position, colors = [[255, 255, 255]], speed = 10) {
+  constructor(position, colors = [[255, 255, 255]], density = 10) {
     const colorIndex = Math.round(Math.random() * (colors.length - 1));
     this.color = colors[colorIndex];
     this.position = position;
-    this.speed = speed;
+    this.density = density;
   }
 
   update(state) {
-    throw new Error("updateFn not implemented");
+    
+    // General rule, particle with more density go to the bottom
+    let { x, y } = this.position;
+
+    // Clear old position
+    state[y][x] = null;
+
+    if (isWithinBounds(state, x, y + 1)) {
+      var below = state[y + 1][x]
+      if (below && this.density > below.density) {
+        swap(this, below)
+        state[y][x] = this
+        state[below.position.y][below.position.x] = below
+        return true
+      }
+    }
   }
 }
 
@@ -21,6 +36,8 @@ export class Sand extends Particle {
   }
 
   update(state) {
+    if (super.update(state)) return;
+
     let { x, y } = this.position;
 
     const positions = [
@@ -35,6 +52,7 @@ export class Sand extends Particle {
     }
 
     this.position = { x, y };
+    state[y][x] = this
   }
 }
 
@@ -47,12 +65,14 @@ export class Water extends Particle {
         [135, 206, 250], //#87CEFA
         [0, 0, 255], //#0000FF
       ],
-      20
+      5
     );
     this.direction = Math.random() > 0.5 ? -1 : 1;
   }
 
   update(state) {
+    if (super.update(state)) return;
+
     let { x, y } = this.position;
 
     const positions = [
@@ -67,6 +87,7 @@ export class Water extends Particle {
     }
 
     this.position = { x, y };
+    state[y][x] = this
   }
 }
 
@@ -79,6 +100,8 @@ export class Rock extends Particle {
   }
 
   update(state) {
+    if (super.update(state)) return;
+
     let { x, y } = this.position;
 
     if (isEmpty(state, x, y + 1)) {
@@ -86,6 +109,7 @@ export class Rock extends Particle {
     }
 
     this.position = { x, y };
+    state[y][x] = this
   }
 }
 
@@ -95,4 +119,10 @@ function isWithinBounds(state, x, y) {
 
 function isEmpty(state, x, y) {
   return isWithinBounds(state, x, y) && !state[y][x];
+}
+
+function swap(a, b) {
+  var temp = a.position
+  a.position = b.position
+  b.position = temp
 }
