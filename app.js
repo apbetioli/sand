@@ -69,15 +69,13 @@ class Engine {
   }
 
   updateParticles() {
-    for (let i = 0; i < 5; i++) {
-      this.particles.forEach((particle) => {
-        // Clear old position
-        this.state[particle.position.y][particle.position.x] = null;
-        // Update new position
-        particle.update(this.state);
-        this.state[particle.position.y][particle.position.x] = particle;
-      });
-    }
+    this.particles.forEach((particle) => {
+      // Clear old position
+      this.state[particle.position.y][particle.position.x] = null;
+      // Update new position
+      particle.update(this.state);
+      this.state[particle.position.y][particle.position.x] = particle;
+    });
   }
 
   logFPS(timestamp) {
